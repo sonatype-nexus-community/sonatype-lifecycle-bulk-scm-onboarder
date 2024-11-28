@@ -16,9 +16,6 @@
 
 package scm
 
-// Indexed by String
-var scmIntegrations = make(map[string]SCMIntegration)
-
 type SCMIntegration interface {
 	GetMappedAsOrgContents() (*OrgContents, error)
 	GetScmConfig() *ScmConfiguration
