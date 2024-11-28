@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -109,37 +110,68 @@ func main() {
 		println(fmt.Sprintf("Error: %v", err))
 		os.Exit(1)
 	}
+	if iqTargetOrganization == nil {
+		println(fmt.Sprintf("Could not find requested Organization %s", nxiqOrgNameToImportTo))
+		os.Exit(1)
+	}
 
 	println(fmt.Sprintf("Target Organization in Sonatype: %s (%s)", *iqTargetOrganization.Name, *iqTargetOrganization.Id))
 	println("")
 
 	var orgContents *scm.OrgContents
+	var scmConfig *scm.ScmConfiguration
 
+	// If Azure, query Azure DevOps
 	if azureScm {
 		println("Loading from Azure DevOps...")
 		println("")
-		orgContents, err = loadFromAzureDevOps()
+		orgContents, scmConfig, err = loadFromAzureDevOps()
 		if err != nil {
 			panic(err)
 		}
 	}
 
 	orgContents.PrintTree()
+
+	println("")
+	continueToCreateInIq := askForConfirmation("Continue to create Organizations and Applications in Sonatype Lifecycle?")
+	if continueToCreateInIq {
+		println("Creating Organizations and Applications in Sonatype Lifecycle. Please wait...")
+		nxiqServer.ApplyOrgContents(*orgContents, iqTargetOrganization, scmConfig)
+		println("Done 😉")
+	}
 }
 
-func loadFromAzureDevOps() (*scm.OrgContents, error) {
+func askForConfirmation(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+		response = strings.ToLower(strings.TrimSpace(response))
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		}
+	}
+}
+
+func loadFromAzureDevOps() (*scm.OrgContents, *scm.ScmConfiguration, error) {
 	envPat := os.Getenv(ENV_ADO_PAT)
 	if strings.TrimSpace(envPat) == "" {
-		return nil, fmt.Errorf("Missing Azure PAT in environment varaible")
+		return nil, nil, fmt.Errorf("Missing Azure PAT in environment varaible")
 	}
 
 	scmConnection := scm.NewAzureDevOpsScmIntegration(envPat, nil)
 	orgContents, err := scmConnection.GetMappedAsOrgContents()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return orgContents, nil
+	return orgContents, scmConnection.GetScmConfig(), nil
 }
 
 func loadCredentials() error {

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -90,6 +91,14 @@ func (scm *AzureDevOpsScmIntegration) GetMappedAsOrgContents() (*OrgContents, er
 	return &orgContents, nil
 }
 
+func (scm *AzureDevOpsScmIntegration) GetScmConfig() *ScmConfiguration {
+	return &ScmConfiguration{
+		Username: "noone@nowhere.tld",
+		Password: scm.pat,
+		Type:     SCM_TYPE_AZURE,
+	}
+}
+
 func (scm *AzureDevOpsScmIntegration) getSubOrganizationsForAzureAccount(account *accounts.Account) (*[]Organization, error) {
 	projects, err := scm.getProjectsForAccount(account)
 	if err != nil {
@@ -104,9 +113,9 @@ func (scm *AzureDevOpsScmIntegration) getSubOrganizationsForAzureAccount(account
 		}
 
 		org := Organization{
-			Name:        *o.Name,
-			ScmProvider: SCM_TYPE_AZURE,
-			Applicatons: *apps,
+			Name:         *o.Name,
+			ScmProvider:  SCM_TYPE_AZURE,
+			Applications: *apps,
 		}
 		orgs = append(orgs, org)
 	}
@@ -122,11 +131,15 @@ func (scm *AzureDevOpsScmIntegration) getApplicationsForProject(account *account
 
 	apps := make([]Application, 0)
 	for _, repo := range *repos {
-		apps = append(apps, Application{
+		appDto := Application{
 			Name:          *repo.Name,
-			DefaultBranch: repo.DefaultBranch,
-			RepositoryUrl: *repo.RemoteUrl,
-		})
+			RepositoryUrl: *repo.WebUrl,
+		}
+		if repo.DefaultBranch != nil {
+			defaultBranch := strings.Replace(*repo.DefaultBranch, "refs/heads/", "", 1)
+			appDto.DefaultBranch = &defaultBranch
+		}
+		apps = append(apps, appDto)
 	}
 
 	return &apps, nil

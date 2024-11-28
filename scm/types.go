@@ -22,9 +22,16 @@ import (
 )
 
 const (
-	BANNED_CHARS   = ";$!&|()[]<>"
-	SCM_TYPE_AZURE = "azure"
+	BANNED_CHARS_ID   = ";$!&|()[]<> _#"
+	BANNED_CHARS_NAME = ";$!&|()[]<>"
+	SCM_TYPE_AZURE    = "azure"
 )
+
+type ScmConfiguration struct {
+	Type     string
+	Username string
+	Password string
+}
 
 type Application struct {
 	Name          string
@@ -36,9 +43,19 @@ func (a *Application) PrintTree(depth int) {
 	println(fmt.Sprintf("%sAPP: %s (to be created as %s)", strings.Repeat(" -- ", depth), a.Name, a.SafeName()))
 }
 
+func (a *Application) SafeId() string {
+	return strings.ToLower(strings.Map(func(r rune) rune {
+		if strings.Contains(BANNED_CHARS_ID, string(r)) {
+			return '-'
+		} else {
+			return r
+		}
+	}, a.Name))
+}
+
 func (a *Application) SafeName() string {
 	return strings.Map(func(r rune) rune {
-		if strings.Contains(BANNED_CHARS, string(r)) {
+		if strings.Contains(BANNED_CHARS_NAME, string(r)) {
 			return '-'
 		} else {
 			return r
@@ -49,13 +66,13 @@ func (a *Application) SafeName() string {
 type Organization struct {
 	Name             string
 	ScmProvider      string
-	Applicatons      []Application
+	Applications     []Application
 	SubOrganizations []Organization
 }
 
 func (o *Organization) PrintTree(depth int) {
 	println(fmt.Sprintf("%sORG: %s (to be created as %s)", strings.Repeat(" -- ", depth), o.Name, o.SafeName()))
-	for _, a := range o.Applicatons {
+	for _, a := range o.Applications {
 		a.PrintTree((depth + 1))
 	}
 	for _, so := range o.SubOrganizations {
@@ -65,7 +82,7 @@ func (o *Organization) PrintTree(depth int) {
 
 func (o *Organization) SafeName() string {
 	return strings.Map(func(r rune) rune {
-		if strings.Contains(BANNED_CHARS, string(r)) {
+		if strings.Contains(BANNED_CHARS_NAME, string(r)) {
 			return '-'
 		} else {
 			return r

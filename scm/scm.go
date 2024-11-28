@@ -20,7 +20,7 @@ package scm
 var scmIntegrations = make(map[string]SCMIntegration)
 
 type SCMIntegration interface {
-	// GetOrganisations() error
 	GetMappedAsOrgContents() (*OrgContents, error)
+	GetScmConfig() *ScmConfiguration
 	ValidateConnection() (bool, error)
 }
