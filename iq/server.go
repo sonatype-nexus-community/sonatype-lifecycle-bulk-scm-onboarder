@@ -84,15 +84,15 @@ func (s *NxiqServer) ApplyOrgContents(orgContent scm.OrgContents, rootOrganizati
 			return err
 		}
 
-		if len(o.Applications) > 0 {
-			for _, a := range o.Applications {
-				app, err := s.CreateApplication(a, *org.Id)
-				if err != nil {
-					return err
-				}
-				log.Debug(fmt.Sprintf("Created Application %s - %s", a.SafeName(), *app.Id))
-			}
-		}
+		// if len(o.Applications) > 0 {
+		// 	for _, a := range o.Applications {
+		// 		app, err := s.CreateApplication(a, *org.Id)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 		log.Debug(fmt.Sprintf("Created Application %s - %s", a.SafeName(), *app.Id))
+		// 	}
+		// }
 
 		if len(o.SubOrganizations) > 0 {
 			for _, so := range o.SubOrganizations {
@@ -121,9 +121,22 @@ func (s *NxiqServer) createAppsInOrg(org *sonatypeiq.ApiOrganizationDTO, apps []
 				return err
 			}
 			log.Debug(fmt.Sprintf("Created Application %s - %s", a.SafeName(), *app.Id))
+			s.scheduleSourceStageScan(app, a.DefaultBranch)
 		}
 	}
 	return nil
+}
+
+func (s *NxiqServer) scheduleSourceStageScan(app *sonatypeiq.ApiApplicationDTO, defaultBranchName *string) {
+	sourceStage := "source"
+	_, r, err := s.apiClient.PolicyEvaluationAPI.EvaluateSourceControl(*s.apiContext, *app.Id).ApiSourceControlEvaluationRequestDTO(sonatypeiq.ApiSourceControlEvaluationRequestDTO{
+		BranchName: defaultBranchName,
+		StageId:    &sourceStage,
+	}).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `PolicyEvaluationAPI.EvaluateSourceControl``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 
 func (s *NxiqServer) CreateOrganization(org scm.Organization, parentOrgId string) (*sonatypeiq.ApiOrganizationDTO, error) {

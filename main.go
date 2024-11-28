@@ -59,7 +59,7 @@ func init() {
 	flag.StringVar(&nxiqUrl, "url", "http://localhost:8070", "URL including protocol to your Sonatype Lifecycle")
 	flag.StringVar(&nxiqUsername, "username", "", fmt.Sprintf("Username used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s)", ENV_NXIQ_USERNAME))
 	flag.StringVar(&nxiqPassword, "password", "", fmt.Sprintf("Password used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s)", ENV_NXIQ_PASSWORD))
-	flag.StringVar(&nxiqOrgNameToImportTo, "org-name", "Root Organization", fmt.Sprintf("Name of Organization to import structure into"))
+	flag.StringVar(&nxiqOrgNameToImportTo, "org-name", "Root Organization", "Name of Organization to import structure into")
 	flag.BoolVar(&debugLogging, "X", false, "Enable debug logging")
 }
 
@@ -137,7 +137,10 @@ func main() {
 	continueToCreateInIq := askForConfirmation("Continue to create Organizations and Applications in Sonatype Lifecycle?")
 	if continueToCreateInIq {
 		println("Creating Organizations and Applications in Sonatype Lifecycle. Please wait...")
-		nxiqServer.ApplyOrgContents(*orgContents, iqTargetOrganization, scmConfig)
+		err = nxiqServer.ApplyOrgContents(*orgContents, iqTargetOrganization, scmConfig)
+		if err != nil {
+			println("❌ Sorry - something went awry: ", err)
+		}
 		println("Done 😉")
 	}
 }
