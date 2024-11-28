@@ -1,0 +1,50 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - 'v*'
+
+env:
+    LC_APPLICATION_ID: sonatype-lifecycle-bulk-scm-onboarder
+
+jobs:
+    goreleaser:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  # Allow goreleaser to access older tag information.
+                  fetch-depth: 0
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version-file: 'go.mod'
+                  cache: true
+
+            - name: Sonatype Lifecycle Evaluation
+              id: evaluate
+              uses: sonatype/actions/evaluate@v1
+              with:
+                  iq-server-url: ${{ vars.SONATYPE_PLATFORM_URL }}
+                  username: ${{ secrets.SONATYPE_LIFECYCLE_USERNAME }}
+                  password: ${{ secrets.SONATYPE_LIFECYCLE_PASSWORD }}
+                  application-id: ${{ env.LC_APPLICATION_ID }}
+                  scan-targets: '.'
+                  stage: 'release'
+
+            - name: Import GPG key
+              uses: crazy-max/ghaction-import-gpg@v6
+              id: import_gpg
+              with:
+                  gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+                  passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+            - name: Run GoReleaser
+              uses: goreleaser/goreleaser-action@v5
+              with:
+                  args: release --clean
+              env:
+                  # GitHub sets the GITHUB_TOKEN secret automatically.
+                  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+                  GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}

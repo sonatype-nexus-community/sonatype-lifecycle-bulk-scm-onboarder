@@ -3,7 +3,7 @@
 It's great you're here and reading this guide, because we need volunteers to help keep this project active and alive for the greater benefit of everyone!
 
 - [Engaging with this project](#engaging-with-this-project)
-- [Develpoment Guidelines](#develpoment-guidelines)
+- [Development Guidelines](#development-guidelines)
   - [Coding Conventions](#coding-conventions)
 - [Testing](#testing)
 - [Submitting Contributions](#submitting-contributions)
@@ -13,7 +13,7 @@ It's great you're here and reading this guide, because we need volunteers to hel
 TODO: Add links below to your repo's GitHub Issues and Discussions pages.
 
 Here are some important resources:
-- [GitHub Issues](#) - a place for bugs to be raised and feature requests made
+- [GitHub Issues](https://github.com/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder/issues) - a place for bugs to be raised and feature requests made
 - [GitHub Discussions](#) - a place to discuss ideas or real-world usage
 
 ## Development Guidelines

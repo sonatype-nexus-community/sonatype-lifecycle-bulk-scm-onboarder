@@ -1,0 +1,85 @@
+/**
+ * Copyright (c) 2019-present Sonatype, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package scm
+
+import (
+	"fmt"
+	"strings"
+)
+
+const (
+	BANNED_CHARS   = ";$!&|()[]<>"
+	SCM_TYPE_AZURE = "azure"
+)
+
+type Application struct {
+	Name          string
+	DefaultBranch *string
+	RepositoryUrl string
+}
+
+func (a *Application) PrintTree(depth int) {
+	println(fmt.Sprintf("%sAPP: %s (to be created as %s)", strings.Repeat(" -- ", depth), a.Name, a.SafeName()))
+}
+
+func (a *Application) SafeName() string {
+	return strings.Map(func(r rune) rune {
+		if strings.Contains(BANNED_CHARS, string(r)) {
+			return '-'
+		} else {
+			return r
+		}
+	}, a.Name)
+}
+
+type Organization struct {
+	Name             string
+	ScmProvider      string
+	Applicatons      []Application
+	SubOrganizations []Organization
+}
+
+func (o *Organization) PrintTree(depth int) {
+	println(fmt.Sprintf("%sORG: %s (to be created as %s)", strings.Repeat(" -- ", depth), o.Name, o.SafeName()))
+	for _, a := range o.Applicatons {
+		a.PrintTree((depth + 1))
+	}
+	for _, so := range o.SubOrganizations {
+		so.PrintTree((depth + 1))
+	}
+}
+
+func (o *Organization) SafeName() string {
+	return strings.Map(func(r rune) rune {
+		if strings.Contains(BANNED_CHARS, string(r)) {
+			return '-'
+		} else {
+			return r
+		}
+	}, o.Name)
+}
+
+type OrgContents struct {
+	Organizations []Organization
+}
+
+func (oc *OrgContents) PrintTree() {
+	depth := 0
+	for _, o := range oc.Organizations {
+		o.PrintTree(depth)
+	}
+}

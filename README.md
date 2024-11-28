@@ -1,4 +1,4 @@
-# YOUR PROJECT NAME HERE
+# Sonatype Lifecycle Bulk SCM Importer
 
 <!-- Badges Section -->
 [![shield_gh-workflow-test]][link_gh-workflow-test]
@@ -39,8 +39,8 @@ This project is part of the [Sonatype Nexus Community](https://github.com/sonaty
 Last but not least of all - have fun!
 
 <!-- Links Section -->
-[shield_gh-workflow-test]: https://img.shields.io/github/actions/workflow/status/sonatype-nexus-community/community-project-template/test.yml?branch=main&logo=GitHub&logoColor=white "build"
-[shield_license]: https://img.shields.io/github/license/sonatype-nexus-community/community-project-template?logo=open%20source%20initiative&logoColor=white "license"
+[shield_gh-workflow-test]: https://img.shields.io/github/actions/workflow/status/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder/test.yml?branch=main&logo=GitHub&logoColor=white "build"
+[shield_license]: https://img.shields.io/github/license/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder?logo=open%20source%20initiative&logoColor=white "license"
 
-[link_gh-workflow-test]: https://github.com/sonatype-nexus-community/community-project-template/actions/workflows/test.yml?query=branch%3Amain
-[license_file]: https://github.com/sonatype-nexus-community/community-project-template/blob/main/LICENSE
+[link_gh-workflow-test]: https://github.com/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder/actions/workflows/test.yml?query=branch%3Amain
+[license_file]: https://github.com/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarderblob/main/LICENSE
