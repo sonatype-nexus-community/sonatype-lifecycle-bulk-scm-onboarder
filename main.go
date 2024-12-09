@@ -23,11 +23,13 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder/iq"
 	"github.com/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder/scm"
 	"github.com/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder/util"
+	"golang.org/x/term"
 )
 
 const (
@@ -55,10 +57,10 @@ func usage() {
 }
 
 func init() {
-	flag.BoolVar(&azureScm, "azure", false, fmt.Sprintf("Load from Azure DevOps (set PAT in %s Environment Variable)", ENV_ADO_PAT))
+	flag.BoolVar(&azureScm, "azure", false, fmt.Sprintf("Load from Azure DevOps (set PAT in %s Environment Variable else you'll be prompted to enter it)", ENV_ADO_PAT))
 	flag.StringVar(&nxiqUrl, "url", "http://localhost:8070", "URL including protocol to your Sonatype Lifecycle")
-	flag.StringVar(&nxiqUsername, "username", "", fmt.Sprintf("Username used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s)", ENV_NXIQ_USERNAME))
-	flag.StringVar(&nxiqPassword, "password", "", fmt.Sprintf("Password used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s)", ENV_NXIQ_PASSWORD))
+	flag.StringVar(&nxiqUsername, "username", "", fmt.Sprintf("Username used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s, else you'll be prompted to enter it)", ENV_NXIQ_USERNAME))
+	flag.StringVar(&nxiqPassword, "password", "", fmt.Sprintf("Password used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s, else you'll be prompted to enter it)", ENV_NXIQ_PASSWORD))
 	flag.StringVar(&nxiqOrgNameToImportTo, "org-name", "Root Organization", "Name of Organization to import structure into")
 	flag.BoolVar(&debugLogging, "X", false, "Enable debug logging")
 }
@@ -131,17 +133,19 @@ func main() {
 		}
 	}
 
-	orgContents.PrintTree()
+	if orgContents != nil {
+		orgContents.PrintTree()
 
-	println("")
-	continueToCreateInIq := askForConfirmation("Continue to create Organizations and Applications in Sonatype Lifecycle?")
-	if continueToCreateInIq {
-		println("Creating Organizations and Applications in Sonatype Lifecycle. Please wait...")
-		err = nxiqServer.ApplyOrgContents(*orgContents, iqTargetOrganization, scmConfig)
-		if err != nil {
-			println("❌ Sorry - something went awry: ", err)
+		println("")
+		continueToCreateInIq := askForConfirmation("Continue to create Organizations and Applications in Sonatype Lifecycle?")
+		if continueToCreateInIq {
+			println("Creating Organizations and Applications in Sonatype Lifecycle. Please wait...")
+			err = nxiqServer.ApplyOrgContents(*orgContents, iqTargetOrganization, scmConfig)
+			if err != nil {
+				println("❌ Sorry - something went awry: ", err)
+			}
+			println("Done 😉")
 		}
-		println("Done 😉")
 	}
 }
 
@@ -162,10 +166,26 @@ func askForConfirmation(s string) bool {
 	}
 }
 
+func secretPrompt(label string) string {
+	var s string
+	for {
+		fmt.Fprint(os.Stderr, label+" ")
+		b, _ := term.ReadPassword(int(syscall.Stdin))
+		s = string(b)
+		if s != "" {
+			break
+		}
+	}
+	fmt.Println()
+	log.Debug(fmt.Sprintf("Read '%s' from STDIN: ", s))
+	return s
+}
+
 func loadFromAzureDevOps() (*scm.OrgContents, *scm.ScmConfiguration, error) {
 	envPat := os.Getenv(ENV_ADO_PAT)
 	if strings.TrimSpace(envPat) == "" {
-		return nil, nil, fmt.Errorf("Missing Azure PAT in environment varaible")
+		envPat = secretPrompt("Enter your Azure DevOps PAT: ")
+		log.Debug("Read Azure DevOps PAT from STDIN")
 	}
 
 	scmConnection := scm.NewAzureDevOpsScmIntegration(envPat, nil)
@@ -182,21 +202,29 @@ func loadCredentials() error {
 		log.Debug("Username not supplied as argument - checking environment variable")
 		envUsername := os.Getenv(ENV_NXIQ_USERNAME)
 		if strings.TrimSpace(envUsername) == "" {
-			return fmt.Errorf("No username has been supplied either via argument or environment variable. Cannot continue.")
+			nxiqUsername = secretPrompt("Enter your Sonatype IQ Server Username: ")
+			log.Debug("Read Sonatype IQ Server Username from STDIN")
 		} else {
 			nxiqUsername = envUsername
 		}
+	}
+	if strings.TrimSpace(nxiqUsername) == "" {
+		log.Warn("No Sonatype IQ Server Username")
+		return fmt.Errorf("No username has been supplied either via argument or environment variable. Cannot continue.")
 	}
 
 	if strings.TrimSpace(nxiqPassword) == "" {
 		log.Debug("Password not supplied as argument - checking environment variable")
 		envPassword := os.Getenv(ENV_NXIQ_PASSWORD)
 		if strings.TrimSpace(envPassword) == "" {
-			log.Error("No password has been supplied either via argument or environment variable. Cannot continue.")
-			return fmt.Errorf("No password has been supplied either via argument or environment variable. Cannot continue.")
+			nxiqPassword = secretPrompt("Enter your Sonatype IQ Server Password: ")
+			log.Debug("Read Sonatype IQ Server Password from STDIN")
 		} else {
 			nxiqPassword = envPassword
 		}
+	}
+	if strings.TrimSpace(nxiqPassword) == "" {
+		return fmt.Errorf("No password has been supplied either via argument or environment variable. Cannot continue.")
 	}
 
 	return nil
