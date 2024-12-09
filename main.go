@@ -57,10 +57,10 @@ func usage() {
 }
 
 func init() {
-	flag.BoolVar(&azureScm, "azure", false, fmt.Sprintf("Load from Azure DevOps (set PAT in %s Environment Variable)", ENV_ADO_PAT))
+	flag.BoolVar(&azureScm, "azure", false, fmt.Sprintf("Load from Azure DevOps (set PAT in %s Environment Variable else you'll be prompted to enter it)", ENV_ADO_PAT))
 	flag.StringVar(&nxiqUrl, "url", "http://localhost:8070", "URL including protocol to your Sonatype Lifecycle")
-	flag.StringVar(&nxiqUsername, "username", "", fmt.Sprintf("Username used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s)", ENV_NXIQ_USERNAME))
-	flag.StringVar(&nxiqPassword, "password", "", fmt.Sprintf("Password used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s)", ENV_NXIQ_PASSWORD))
+	flag.StringVar(&nxiqUsername, "username", "", fmt.Sprintf("Username used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s, else you'll be prompted to enter it)", ENV_NXIQ_USERNAME))
+	flag.StringVar(&nxiqPassword, "password", "", fmt.Sprintf("Password used to authenticate to Sonatype Lifecycle (can also be set using the environment variable %s, else you'll be prompted to enter it)", ENV_NXIQ_PASSWORD))
 	flag.StringVar(&nxiqOrgNameToImportTo, "org-name", "Root Organization", "Name of Organization to import structure into")
 	flag.BoolVar(&debugLogging, "X", false, "Enable debug logging")
 }
