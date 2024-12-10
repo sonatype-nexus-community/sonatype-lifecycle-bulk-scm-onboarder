@@ -28,6 +28,10 @@ jobs:
               run: |
                   go build -ldflags='-s -w'
 
+            - name: Run Tests
+              run: |
+                  go test -v ./...
+
     sonatype:
         name: Sonatype Lifecycle
         runs-on: ubuntu-latest
