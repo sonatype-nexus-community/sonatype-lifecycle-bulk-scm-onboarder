@@ -3,6 +3,7 @@
 <!-- Badges Section -->
 [![shield_gh-workflow-test]][link_gh-workflow-test]
 [![shield_license]][license_file]
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=sonatype-nexus-community_sonatype-lifecycle-bulk-scm-onboarder&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=sonatype-nexus-community_sonatype-lifecycle-bulk-scm-onboarder)
 <!-- Add other badges or shields as appropriate -->
 
 ---
