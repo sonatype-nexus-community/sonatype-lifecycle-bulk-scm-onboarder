@@ -156,12 +156,14 @@ func (s *NxiqServer) ApplyOrgContents(orgContent scm.OrgContents, rootOrganizati
 func (s *NxiqServer) createAppsInOrg(org *sonatypeiq.ApiOrganizationDTO, apps []scm.Application) error {
 	if len(apps) > 0 {
 		for _, a := range apps {
-			app, err := s.CreateApplication(a, *org.Id)
+			app, scm, err := s.CreateApplication(a, *org.Id)
 			if err != nil {
 				return err
 			}
 			log.Debug(fmt.Sprintf("Created Application %s - %s", a.SafeName(), *app.Id))
-			s.scheduleSourceStageScan(app, a.DefaultBranch)
+			if scm != nil {
+				s.scheduleSourceStageScan(app, a.DefaultBranch)
+			}
 		}
 	}
 	return nil
@@ -321,17 +323,18 @@ func (s *NxiqServer) UpdateOrganizationScmConfiguration(org *sonatypeiq.ApiOrgan
 	return nil
 }
 
-func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) (*sonatypeiq.ApiApplicationDTO, error) {
+func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) (*sonatypeiq.ApiApplicationDTO, *sonatypeiq.ApiSourceControlDTO, error) {
 	existingApp, err := s.ApplicationExists(app, parentOrgId)
 	if err != nil {
 		log.Debug(fmt.Sprintf("Failed to determine if Application %s already exists", app.Name))
-		return nil, err
+		return nil, nil, err
 	}
 
+	var scmDto *sonatypeiq.ApiSourceControlDTO
 	if existingApp != nil {
 		// Update SCM Configuration
-		if app.IsBranchNamePermitted() {
-			_, r, err := s.apiClient.SourceControlAPI.UpdateSourceControl(*s.apiContext, "application", *existingApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
+		if app.IsRepositoryUrlPermitted() && app.IsBranchNamePermitted() {
+			scmDto, r, err := s.apiClient.SourceControlAPI.UpdateSourceControl(*s.apiContext, "application", *existingApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
 				RepositoryUrl:                   &app.RepositoryUrl,
 				BaseBranch:                      app.DefaultBranch,
 				EnablePullRequests:              nil,
@@ -343,23 +346,29 @@ func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) 
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error when calling `SourceControlAPI.UpdateSourceControl``: %v\n", err)
 				fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-				return nil, err
+				return nil, nil, err
 			}
-			return existingApp, nil
+			return existingApp, scmDto, nil
 		} else {
-			log.Warn(fmt.Sprintf("Application %s has an unsupported Default Branch '%s' and will not have SCM configuration saved into Sonatype", app.Name, *app.DefaultBranch))
+			log.Warn(fmt.Sprintf("Application %s has an unsupported Default Branch or Repository URL '%s' and will not have SCM configuration saved into Sonatype", app.Name, app.RepositoryUrl))
 		}
 	}
 
 	createdApp, err := s.createApplication(app, parentOrgId)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	log.Debug(fmt.Sprintf("Created App: %v", createdApp))
+	log.Debug(fmt.Sprintf("Created App: %s (%s)", *createdApp.Name, *createdApp.Id))
 
 	// Set SCM Configuration
-	if app.IsBranchNamePermitted() {
-		_, r, err := s.apiClient.SourceControlAPI.AddSourceControl(*s.apiContext, "application", *createdApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
+	if app.IsRepositoryUrlPermitted() && app.IsBranchNamePermitted() {
+		log.Debug(
+			fmt.Sprintf(
+				"APP Source Control. URL: '%s' %v, Branch: '%s' %v",
+				app.RepositoryUrl, app.IsRepositoryUrlPermitted(), *app.DefaultBranch, app.IsBranchNamePermitted(),
+			),
+		)
+		scmDto, r, err := s.apiClient.SourceControlAPI.AddSourceControl(*s.apiContext, "application", *createdApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
 			RepositoryUrl:                   &app.RepositoryUrl,
 			BaseBranch:                      app.DefaultBranch,
 			EnablePullRequests:              nil,
@@ -371,13 +380,14 @@ func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) 
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error when calling `SourceControlAPI.AddSourceControl``: %v\n", err)
 			fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-			return nil, err
+			return nil, nil, err
 		}
+		return createdApp, scmDto, nil
 	} else {
-		log.Warn(fmt.Sprintf("Application %s has an unsupported Default Branch '%s' and will not have SCM configuration saved into Sonatype", app.Name, *app.DefaultBranch))
+		log.Warn(fmt.Sprintf("Application %s has an unsupported Default Branch or Repository URL '%s' and will not have SCM configuration saved into Sonatype", app.Name, app.RepositoryUrl))
 	}
 
-	return createdApp, nil
+	return createdApp, scmDto, nil
 }
 
 func (s *NxiqServer) ApplicationExists(app scm.Application, parentOrgId string) (*sonatypeiq.ApiApplicationDTO, error) {

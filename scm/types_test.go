@@ -23,6 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSafeBranchNameNil(t *testing.T) {
+	var nil string
+	assert.Equal(t, false, safeBranchName(nil))
+}
+
 func TestSafeBranchName(t *testing.T) {
 
 	cases := []struct {
@@ -45,11 +50,48 @@ func TestSafeBranchName(t *testing.T) {
 			input:     "with&mpersand",
 			permitted: false,
 		},
+		{
+			input:     "ma?in",
+			permitted: false,
+		},
+		{
+			input:     "pi|pe",
+			permitted: false,
+		},
+		{
+			input:     "give;injection",
+			permitted: false,
+		},
 	}
 
 	for i, tc := range cases {
 		t.Run(fmt.Sprintf("TestSafeBranchName-%d-%s", i, tc.input), func(t *testing.T) {
 			assert.Equal(t, tc.permitted, safeBranchName(tc.input))
+		})
+	}
+}
+
+func TestSafeRepositoryUrl(t *testing.T) {
+
+	cases := []struct {
+		input     string
+		permitted bool
+	}{
+		{
+			input:     "https://REDACTED@dev.azure.com/REDACTED/Scan-Test-1/_git/main",
+			permitted: true,
+		}, {
+			input:     "https://REDACTED@dev.azure.com/REDACTED/Scan-Test-1/_git/Craz%28%29y%20Repo",
+			permitted: false,
+		}, {
+			input:     "https://dev.azure.com/PHorton0655/Scan-Test-1/_git/Craz%28%29y%20Repo",
+			permitted: false,
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("TestSafeRepositoryUrl-%d-%s", i, tc.input), func(t *testing.T) {
+			assert.Equal(t, tc.permitted, safeRepositoryUrl(tc.input))
 		})
 	}
 }

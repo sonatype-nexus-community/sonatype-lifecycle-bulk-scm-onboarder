@@ -18,8 +18,11 @@ package scm
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -29,7 +32,7 @@ const (
 )
 
 var (
-	INVALID_BRANCH_NAME = regexp.MustCompile(`([;$!*&\(\)\[\]<>])`)
+	INVALID_BRANCH_NAME = regexp.MustCompile(`([;$!*&|\(\)\[\]<>#?])`)
 	MULTIPLE_SPACES     = regexp.MustCompile(`\s(\s+)`)
 )
 
@@ -64,11 +67,27 @@ func (a *Application) SafeName() string {
 }
 
 func (a *Application) IsBranchNamePermitted() bool {
-	return safeBranchName(*a.DefaultBranch)
+	if a.DefaultBranch != nil {
+		return safeBranchName(*a.DefaultBranch)
+	}
+	return false
+}
+
+func (a *Application) IsRepositoryUrlPermitted() bool {
+	return safeRepositoryUrl(a.RepositoryUrl)
 }
 
 func safeBranchName(in string) bool {
 	return !INVALID_BRANCH_NAME.MatchString(in)
+}
+
+func safeRepositoryUrl(in string) bool {
+	decoded, err := url.QueryUnescape(in)
+	if err != nil {
+		log.Warn(fmt.Sprintf("Failed to URL decode Repository URL: %s", in))
+		return false
+	}
+	return !INVALID_BRANCH_NAME.MatchString(decoded)
 }
 
 type Organization struct {
