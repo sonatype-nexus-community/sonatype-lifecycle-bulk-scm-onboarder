@@ -82,6 +82,10 @@ func TestSafeBranchName(t *testing.T) {
 			input:     "end-period.",
 			permitted: false,
 		},
+		{
+			input:     "end-slash/",
+			permitted: false,
+		},
 	}
 
 	for i, tc := range cases {
