@@ -62,6 +62,18 @@ func TestSafeBranchName(t *testing.T) {
 			input:     "give;injection",
 			permitted: false,
 		},
+		{
+			input:     "give~injection",
+			permitted: false,
+		},
+		{
+			input:     "give%injection",
+			permitted: false,
+		},
+		{
+			input:     "give'injection",
+			permitted: false,
+		},
 	}
 
 	for i, tc := range cases {

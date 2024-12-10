@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	INVALID_BRANCH_NAME = regexp.MustCompile(`([;$!*&|\(\)\[\]<>#?])`)
+	INVALID_BRANCH_NAME = regexp.MustCompile(`([;$!*&|\(\)\[\]<>#?~%'])`)
 	MULTIPLE_SPACES     = regexp.MustCompile(`\s(\s+)`)
 )
 
