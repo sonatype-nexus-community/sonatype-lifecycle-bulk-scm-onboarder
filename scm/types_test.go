@@ -23,6 +23,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSafeBranchName(t *testing.T) {
+
+	cases := []struct {
+		input     string
+		permitted bool
+	}{
+		{
+			input:     "main",
+			permitted: true,
+		},
+		{
+			input:     "master",
+			permitted: true,
+		},
+		{
+			input:     "with(bracket",
+			permitted: false,
+		},
+		{
+			input:     "with&mpersand",
+			permitted: false,
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("TestSafeBranchName-%d-%s", i, tc.input), func(t *testing.T) {
+			assert.Equal(t, tc.permitted, safeBranchName(tc.input))
+		})
+	}
+}
+
 func TestScmSafeName(t *testing.T) {
 
 	cases := []struct {

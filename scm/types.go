@@ -28,7 +28,10 @@ const (
 	SCM_TYPE_AZURE    = "azure"
 )
 
-var MULTIPLE_SPACES = regexp.MustCompile(`\s(\s+)`)
+var (
+	INVALID_BRANCH_NAME = regexp.MustCompile(`([;$!*&\(\)\[\]<>])`)
+	MULTIPLE_SPACES     = regexp.MustCompile(`\s(\s+)`)
+)
 
 type ScmConfiguration struct {
 	Type     string
@@ -58,6 +61,14 @@ func (a *Application) SafeId() string {
 
 func (a *Application) SafeName() string {
 	return safeName(a.Name)
+}
+
+func (a *Application) IsBranchNamePermitted() bool {
+	return safeBranchName(*a.DefaultBranch)
+}
+
+func safeBranchName(in string) bool {
+	return !INVALID_BRANCH_NAME.MatchString(in)
 }
 
 type Organization struct {

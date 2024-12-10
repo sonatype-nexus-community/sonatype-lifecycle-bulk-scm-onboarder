@@ -330,21 +330,25 @@ func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) 
 
 	if existingApp != nil {
 		// Update SCM Configuration
-		_, r, err := s.apiClient.SourceControlAPI.UpdateSourceControl(*s.apiContext, "application", *existingApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
-			RepositoryUrl:                   &app.RepositoryUrl,
-			BaseBranch:                      app.DefaultBranch,
-			EnablePullRequests:              nil,
-			RemediationPullRequestsEnabled:  nil,
-			PullRequestCommentingEnabled:    nil,
-			SourceControlEvaluationsEnabled: nil,
-			SshEnabled:                      nil,
-		}).Execute()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error when calling `SourceControlAPI.UpdateSourceControl``: %v\n", err)
-			fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-			return nil, err
+		if app.IsBranchNamePermitted() {
+			_, r, err := s.apiClient.SourceControlAPI.UpdateSourceControl(*s.apiContext, "application", *existingApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
+				RepositoryUrl:                   &app.RepositoryUrl,
+				BaseBranch:                      app.DefaultBranch,
+				EnablePullRequests:              nil,
+				RemediationPullRequestsEnabled:  nil,
+				PullRequestCommentingEnabled:    nil,
+				SourceControlEvaluationsEnabled: nil,
+				SshEnabled:                      nil,
+			}).Execute()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error when calling `SourceControlAPI.UpdateSourceControl``: %v\n", err)
+				fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+				return nil, err
+			}
+			return existingApp, nil
+		} else {
+			log.Warn(fmt.Sprintf("Application %s has an unsupported Default Branch '%s' and will not have SCM configuration saved into Sonatype", app.Name, *app.DefaultBranch))
 		}
-		return existingApp, nil
 	}
 
 	createdApp, err := s.createApplication(app, parentOrgId)
@@ -354,19 +358,23 @@ func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) 
 	log.Debug(fmt.Sprintf("Created App: %v", createdApp))
 
 	// Set SCM Configuration
-	_, r, err := s.apiClient.SourceControlAPI.AddSourceControl(*s.apiContext, "application", *createdApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
-		RepositoryUrl:                   &app.RepositoryUrl,
-		BaseBranch:                      app.DefaultBranch,
-		EnablePullRequests:              nil,
-		RemediationPullRequestsEnabled:  nil,
-		PullRequestCommentingEnabled:    nil,
-		SourceControlEvaluationsEnabled: nil,
-		SshEnabled:                      nil,
-	}).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `SourceControlAPI.AddSourceControl``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-		return nil, err
+	if app.IsBranchNamePermitted() {
+		_, r, err := s.apiClient.SourceControlAPI.AddSourceControl(*s.apiContext, "application", *createdApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
+			RepositoryUrl:                   &app.RepositoryUrl,
+			BaseBranch:                      app.DefaultBranch,
+			EnablePullRequests:              nil,
+			RemediationPullRequestsEnabled:  nil,
+			PullRequestCommentingEnabled:    nil,
+			SourceControlEvaluationsEnabled: nil,
+			SshEnabled:                      nil,
+		}).Execute()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error when calling `SourceControlAPI.AddSourceControl``: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+			return nil, err
+		}
+	} else {
+		log.Warn(fmt.Sprintf("Application %s has an unsupported Default Branch '%s' and will not have SCM configuration saved into Sonatype", app.Name, *app.DefaultBranch))
 	}
 
 	return createdApp, nil
