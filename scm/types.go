@@ -78,6 +78,9 @@ func (a *Application) IsRepositoryUrlPermitted() bool {
 }
 
 func safeBranchName(in string) bool {
+	if strings.TrimSpace(in) == "" {
+		return false
+	}
 	return !INVALID_BRANCH_NAME.MatchString(in)
 }
 
