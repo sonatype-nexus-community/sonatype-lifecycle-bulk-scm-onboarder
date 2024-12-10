@@ -221,7 +221,10 @@ func (s *NxiqServer) CreateOrganization(org scm.Organization, parentOrgId string
 }
 
 func (s *NxiqServer) OrganizationExists(org scm.Organization, parentOrgId string) (*sonatypeiq.ApiOrganizationDTO, error) {
-	s.InitCache()
+	err := s.InitCache()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	for _, existingOrg := range s.existingOrganizations {
 		if *existingOrg.Name == org.SafeName() && *existingOrg.ParentOrganizationId == parentOrgId {
 			return existingOrg, nil
@@ -370,7 +373,10 @@ func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) 
 }
 
 func (s *NxiqServer) ApplicationExists(app scm.Application, parentOrgId string) (*sonatypeiq.ApiApplicationDTO, error) {
-	s.InitCache()
+	err := s.InitCache()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	for _, existingApp := range s.existingApplications {
 		if *existingApp.Name == app.SafeName() && *existingApp.OrganizationId == parentOrgId {
 			return existingApp, nil
@@ -445,7 +451,10 @@ func (s *NxiqServer) getUniqueOrganizationId(id string) string {
 }
 
 func (s *NxiqServer) ValidateOrganizationByName(organizationName string) *sonatypeiq.ApiOrganizationDTO {
-	s.InitCache()
+	err := s.InitCache()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	for _, o := range s.existingOrganizations {
 		if *o.Name == organizationName {

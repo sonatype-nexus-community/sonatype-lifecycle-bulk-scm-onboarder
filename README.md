@@ -21,6 +21,10 @@ Introduce your project here. A short summary about what its purpose and scope is
 
 This tool queries your Source Control Management (SCM) system and creates Organizations and Applications in Sonatype Lifecycle in bulk.
 
+This tool is intended to be run against either an empty Sonatype Lifecycle installation or a specific Organization that represents a given SCM connection ONCE.
+
+This tool is NOT intended to be run multiple times to continuously import/keep Sonatype Lifecycle up to date with newly created Projects or Repositories in your SCM system - to do this (once you've run this tool once successfully), use [Easy SCM Onboarding](https://help.sonatype.com/en/easy-scm-onboarding.html).
+
 Currently supports:
 - ✅ Azure DevOps
 
