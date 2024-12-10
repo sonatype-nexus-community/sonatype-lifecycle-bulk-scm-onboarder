@@ -105,8 +105,13 @@ func main() {
 	println(strings.Repeat("⬢⬡", 42))
 	println("")
 
-	// Connect to IQ
+	// Connect to IQ and load cache
 	nxiqServer := iq.NewNxiqServer(nxiqUrl, nxiqUsername, nxiqPassword)
+	err = nxiqServer.InitCache()
+	if err != nil {
+		println(fmt.Sprintf("Error: %v", err))
+		os.Exit(1)
+	}
 	iqTargetOrganization, err := nxiqServer.ValidateOrganizationByName(nxiqOrgNameToImportTo)
 	if err != nil {
 		println(fmt.Sprintf("Error: %v", err))
