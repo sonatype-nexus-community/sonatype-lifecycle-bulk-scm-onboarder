@@ -18,6 +18,7 @@ package scm
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -26,6 +27,8 @@ const (
 	BANNED_CHARS_NAME = ";$!&|()[]<>"
 	SCM_TYPE_AZURE    = "azure"
 )
+
+var MULTIPLE_SPACES = regexp.MustCompile(`\s(\s+)`)
 
 type ScmConfiguration struct {
 	Type     string
@@ -54,13 +57,7 @@ func (a *Application) SafeId() string {
 }
 
 func (a *Application) SafeName() string {
-	return strings.Map(func(r rune) rune {
-		if strings.Contains(BANNED_CHARS_NAME, string(r)) {
-			return '-'
-		} else {
-			return r
-		}
-	}, a.Name)
+	return safeName(a.Name)
 }
 
 type Organization struct {
@@ -81,16 +78,7 @@ func (o *Organization) PrintTree(depth int) {
 }
 
 func (o *Organization) SafeName() string {
-	return strings.ReplaceAll(
-		strings.Map(func(r rune) rune {
-			if strings.Contains(BANNED_CHARS_NAME, string(r)) {
-				return '-'
-			} else {
-				return r
-			}
-		}, o.Name),
-		"  ", "--",
-	)
+	return safeName(o.Name)
 }
 
 type OrgContents struct {
@@ -102,4 +90,17 @@ func (oc *OrgContents) PrintTree() {
 	for _, o := range oc.Organizations {
 		o.PrintTree(depth)
 	}
+}
+
+func safeName(in string) string {
+	return MULTIPLE_SPACES.ReplaceAllString(
+		strings.Map(func(r rune) rune {
+			if strings.Contains(BANNED_CHARS_NAME, string(r)) {
+				return '-'
+			} else {
+				return r
+			}
+		}, strings.ReplaceAll(strings.TrimSpace(in), "\t", "-")),
+		"-",
+	)
 }
