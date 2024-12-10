@@ -74,6 +74,14 @@ func TestSafeBranchName(t *testing.T) {
 			input:     "give'injection",
 			permitted: false,
 		},
+		{
+			input:     ".start-period",
+			permitted: false,
+		},
+		{
+			input:     "end-period.",
+			permitted: false,
+		},
 	}
 
 	for i, tc := range cases {
