@@ -81,13 +81,16 @@ func (o *Organization) PrintTree(depth int) {
 }
 
 func (o *Organization) SafeName() string {
-	return strings.Map(func(r rune) rune {
-		if strings.Contains(BANNED_CHARS_NAME, string(r)) {
-			return '-'
-		} else {
-			return r
-		}
-	}, o.Name)
+	return strings.ReplaceAll(
+		strings.Map(func(r rune) rune {
+			if strings.Contains(BANNED_CHARS_NAME, string(r)) {
+				return '-'
+			} else {
+				return r
+			}
+		}, o.Name),
+		"  ", "--",
+	)
 }
 
 type OrgContents struct {
