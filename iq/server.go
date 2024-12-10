@@ -319,6 +319,31 @@ func (s *NxiqServer) UpdateOrganizationScmConfiguration(org *sonatypeiq.ApiOrgan
 }
 
 func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) (*sonatypeiq.ApiApplicationDTO, error) {
+	existingApp, err := s.ApplicationExists(app, parentOrgId)
+	if err != nil {
+		log.Debug(fmt.Sprintf("Failed to determine if Application %s already exists", app.Name))
+		return nil, err
+	}
+
+	if existingApp != nil {
+		// Update SCM Configuration
+		_, r, err := s.apiClient.SourceControlAPI.UpdateSourceControl(*s.apiContext, "application", *existingApp.Id).ApiSourceControlDTO(sonatypeiq.ApiSourceControlDTO{
+			RepositoryUrl:                   &app.RepositoryUrl,
+			BaseBranch:                      app.DefaultBranch,
+			EnablePullRequests:              nil,
+			RemediationPullRequestsEnabled:  nil,
+			PullRequestCommentingEnabled:    nil,
+			SourceControlEvaluationsEnabled: nil,
+			SshEnabled:                      nil,
+		}).Execute()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error when calling `SourceControlAPI.UpdateSourceControl``: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+			return nil, err
+		}
+		return existingApp, nil
+	}
+
 	createdApp, err := s.createApplication(app, parentOrgId)
 	if err != nil {
 		return nil, err
@@ -419,30 +444,14 @@ func (s *NxiqServer) getUniqueOrganizationId(id string) string {
 	return id
 }
 
-func (s *NxiqServer) ValidateOrganizationByName(organizationName string) (*sonatypeiq.ApiOrganizationDTO, error) {
+func (s *NxiqServer) ValidateOrganizationByName(organizationName string) *sonatypeiq.ApiOrganizationDTO {
 	s.InitCache()
 
 	for _, o := range s.existingOrganizations {
 		if *o.Name == organizationName {
-			return o, nil
+			return o
 		}
 	}
 
-	return nil, nil
-
-	// request := s.apiClient.OrganizationsAPI.GetOrganizations(*s.apiContext)
-	// request = request.OrganizationName([]string{organizationName})
-	// orgList, r, err := request.Execute()
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "Error when calling `OrganizationsAPI.GetOrganizations``: %v\n", err)
-	// 	fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	// 	return nil, err
-	// }
-
-	// if len(orgList.Organizations) == 1 {
-	// 	org := &orgList.Organizations[0]
-	// 	return org, nil
-	// }
-
-	// return nil, fmt.Errorf("%d Organizations returned for Name '%s'", len(orgList.Organizations), organizationName)
+	return nil
 }
