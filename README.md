@@ -10,6 +10,8 @@
 Introduce your project here. A short summary about what its purpose and scope is.
 
 - [What does this tool do?](#what-does-this-tool-do)
+  - [Organization Creation](#organization-creation)
+  - [Application Creation](#application-creation)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
@@ -21,6 +23,16 @@ This tool queries your Source Control Management (SCM) system and creates Organi
 
 Currently supports:
 - ✅ Azure DevOps
+
+### Organization Creation
+
+Sub-organizations under either your Root Organization, or an existing Organization of your choosing (see `-org-name` flag) will be created where they do no exist matching your SCM organizations and/or projects. Organizations will not be re-created or duplicated by running this import process. This can lead in some cases to applications from more than one SCM organizations or project being creating in a single Sonatype Organization due to naming restrictions.
+
+### Application Creation
+
+Applications will be create where they cannot be determined to exist for the Repository in your SCM. There are sitations where, due to naming collisions, this cannot be determined and so if you run the import more than once, it is possible that you will have some applications duplicated.
+
+If an Application is determined to already exist, it's SCM configuration will be updated. SCM configuration is always set for newly created Applications.
 
 ## Installation
 
