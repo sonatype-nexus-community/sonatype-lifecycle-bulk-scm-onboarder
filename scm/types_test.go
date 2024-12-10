@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestScmOrganisationSafeName(t *testing.T) {
+func TestScmSafeName(t *testing.T) {
 
 	cases := []struct {
 		input    string
@@ -43,14 +43,29 @@ func TestScmOrganisationSafeName(t *testing.T) {
 		},
 		{
 			input:    "Name  WithDoubleSpace",
-			expected: "Name--WithDoubleSpace",
+			expected: "Name-WithDoubleSpace",
+		},
+		{
+			input:    "Name  WithManySpaces",
+			expected: "Name-WithManySpaces",
+		},
+		{
+			input:    "  Name  WithLeadingSpaces",
+			expected: "Name-WithLeadingSpaces",
+		},
+		{
+			input:    "Name  WithTrailingSpaces  ",
+			expected: "Name-WithTrailingSpaces",
+		},
+		{
+			input:    "Name	WithTab",
+			expected: "Name-WithTab",
 		},
 	}
 
 	for i, tc := range cases {
 		t.Run(fmt.Sprintf("TestScmOrganisationSafeName-%d-%s", i, tc.input), func(t *testing.T) {
-			o := Organization{Name: tc.input}
-			assert.Equal(t, tc.expected, o.SafeName())
+			assert.Equal(t, tc.expected, safeName(tc.input))
 		})
 	}
 }
