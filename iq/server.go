@@ -30,20 +30,6 @@ import (
 	"github.com/sonatype-nexus-community/sonatype-lifecycle-bulk-scm-onboarder/scm"
 )
 
-type nxiqApplication struct {
-	Id             *string
-	Name           *string
-	OrganizationId *string
-	PublicId       *string
-	RepositoryUrl  *string
-}
-
-// type nxiqOrganization struct {
-// 	Id                   *string
-// 	Name                 *string
-// 	ParentOrganizationId *string
-// }
-
 type NxiqServer struct {
 	baseUrl               string
 	username              string
@@ -52,7 +38,7 @@ type NxiqServer struct {
 	apiContext            *context.Context
 	configuration         *sonatypeiq.Configuration
 	cacheLoaded           bool
-	existingApplications  []nxiqApplication
+	existingApplications  []*sonatypeiq.ApiApplicationDTO
 	existingOrganizations []*sonatypeiq.ApiOrganizationDTO
 }
 
@@ -104,20 +90,16 @@ func (s *NxiqServer) InitCache() error {
 }
 
 func (s *NxiqServer) cacheExistingApplications() error {
-	s.existingApplications = make([]nxiqApplication, 0)
+	s.existingApplications = make([]*sonatypeiq.ApiApplicationDTO, 0)
 
 	apiResponse, r, err := s.apiClient.ApplicationsAPI.GetApplications(*s.apiContext).Execute()
 	if err != nil {
 		log.Error(fmt.Sprintf("Failed to load existing Applications from Sonatype IQ: %s: %v: %v", r.Status, err, r.Body))
 		return err
 	}
+
 	for _, a := range apiResponse.Applications {
-		s.existingApplications = append(s.existingApplications, nxiqApplication{
-			Id:             a.Id,
-			PublicId:       a.PublicId,
-			Name:           a.Name,
-			OrganizationId: a.OrganizationId,
-		})
+		s.existingApplications = append(s.existingApplications, &a)
 	}
 
 	log.Info(fmt.Sprintf("Loaded %d existing Applications from Sonatype Lifecycle", len(s.existingApplications)))
@@ -133,11 +115,7 @@ func (s *NxiqServer) cacheExistingOrganizations() error {
 		return err
 	}
 	for _, a := range apiResponse.Organizations {
-		s.existingOrganizations = append(s.existingOrganizations, &sonatypeiq.ApiOrganizationDTO{
-			Id:                   a.Id,
-			Name:                 a.Name,
-			ParentOrganizationId: a.ParentOrganizationId,
-		})
+		s.existingOrganizations = append(s.existingOrganizations, &a)
 	}
 
 	log.Info(fmt.Sprintf("Loaded %d existing Organizations from Sonatype Lifecycle", len(s.existingOrganizations)))
@@ -366,6 +344,16 @@ func (s *NxiqServer) CreateApplication(app scm.Application, parentOrgId string) 
 	return createdApp, nil
 }
 
+func (s *NxiqServer) ApplicationExists(app scm.Application, parentOrgId string) (*sonatypeiq.ApiApplicationDTO, error) {
+	s.InitCache()
+	for _, existingApp := range s.existingApplications {
+		if *existingApp.Name == app.SafeName() && *existingApp.OrganizationId == parentOrgId {
+			return existingApp, nil
+		}
+	}
+	return nil, nil
+}
+
 func (s *NxiqServer) createApplication(app scm.Application, parentOrgId string) (*sonatypeiq.ApiApplicationDTO, error) {
 	appId := s.getUniqueSafeApplicationId(app.SafeId())
 	appName := app.SafeName()
@@ -432,19 +420,29 @@ func (s *NxiqServer) getUniqueOrganizationId(id string) string {
 }
 
 func (s *NxiqServer) ValidateOrganizationByName(organizationName string) (*sonatypeiq.ApiOrganizationDTO, error) {
-	request := s.apiClient.OrganizationsAPI.GetOrganizations(*s.apiContext)
-	request = request.OrganizationName([]string{organizationName})
-	orgList, r, err := request.Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `OrganizationsAPI.GetOrganizations``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-		return nil, err
+	s.InitCache()
+
+	for _, o := range s.existingOrganizations {
+		if *o.Name == organizationName {
+			return o, nil
+		}
 	}
 
-	if len(orgList.Organizations) == 1 {
-		org := &orgList.Organizations[0]
-		return org, nil
-	}
+	return nil, nil
 
-	return nil, fmt.Errorf("%d Organizations returned for Name '%s'", len(orgList.Organizations), organizationName)
+	// request := s.apiClient.OrganizationsAPI.GetOrganizations(*s.apiContext)
+	// request = request.OrganizationName([]string{organizationName})
+	// orgList, r, err := request.Execute()
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Error when calling `OrganizationsAPI.GetOrganizations``: %v\n", err)
+	// 	fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	// 	return nil, err
+	// }
+
+	// if len(orgList.Organizations) == 1 {
+	// 	org := &orgList.Organizations[0]
+	// 	return org, nil
+	// }
+
+	// return nil, fmt.Errorf("%d Organizations returned for Name '%s'", len(orgList.Organizations), organizationName)
 }
