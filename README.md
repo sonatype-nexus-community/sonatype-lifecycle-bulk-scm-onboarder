@@ -3,6 +3,7 @@
 <!-- Badges Section -->
 [![shield_gh-workflow-test]][link_gh-workflow-test]
 [![shield_license]][license_file]
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=sonatype-nexus-community_sonatype-lifecycle-bulk-scm-onboarder&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=sonatype-nexus-community_sonatype-lifecycle-bulk-scm-onboarder)
 <!-- Add other badges or shields as appropriate -->
 
 ---
@@ -10,6 +11,8 @@
 Introduce your project here. A short summary about what its purpose and scope is.
 
 - [What does this tool do?](#what-does-this-tool-do)
+  - [Organization Creation](#organization-creation)
+  - [Application Creation](#application-creation)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
@@ -19,8 +22,22 @@ Introduce your project here. A short summary about what its purpose and scope is
 
 This tool queries your Source Control Management (SCM) system and creates Organizations and Applications in Sonatype Lifecycle in bulk.
 
+This tool is intended to be run against either an empty Sonatype Lifecycle installation or a specific Organization that represents a given SCM connection ONCE.
+
+This tool is NOT intended to be run multiple times to continuously import/keep Sonatype Lifecycle up to date with newly created Projects or Repositories in your SCM system - to do this (once you've run this tool once successfully), use [Easy SCM Onboarding](https://help.sonatype.com/en/easy-scm-onboarding.html).
+
 Currently supports:
 - ✅ Azure DevOps
+
+### Organization Creation
+
+Sub-organizations under either your Root Organization, or an existing Organization of your choosing (see `-org-name` flag) will be created where they do no exist matching your SCM organizations and/or projects. Organizations will not be re-created or duplicated by running this import process. This can lead in some cases to applications from more than one SCM organizations or project being creating in a single Sonatype Organization due to naming restrictions.
+
+### Application Creation
+
+Applications will be create where they cannot be determined to exist for the Repository in your SCM. There are sitations where, due to naming collisions, this cannot be determined and so if you run the import more than once, it is possible that you will have some applications duplicated.
+
+If an Application is determined to already exist, it's SCM configuration will be updated. SCM configuration is always set for newly created Applications.
 
 ## Installation
 
