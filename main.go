@@ -112,11 +112,7 @@ func main() {
 		println(fmt.Sprintf("Error: %v", err))
 		os.Exit(1)
 	}
-	iqTargetOrganization, err := nxiqServer.ValidateOrganizationByName(nxiqOrgNameToImportTo)
-	if err != nil {
-		println(fmt.Sprintf("Error: %v", err))
-		os.Exit(1)
-	}
+	iqTargetOrganization := nxiqServer.ValidateOrganizationByName(nxiqOrgNameToImportTo)
 	if iqTargetOrganization == nil {
 		println(fmt.Sprintf("Could not find requested Organization %s", nxiqOrgNameToImportTo))
 		os.Exit(1)
