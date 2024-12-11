@@ -155,14 +155,55 @@ func TestScmSafeName(t *testing.T) {
 			expected: "Name-WithTrailingSpaces",
 		},
 		{
-			input:    "Name	WithTab",
-			expected: "Name-WithTab",
+			input:    "Invalid—Characters",
+			expected: "Invalid-Characters",
+		},
+		{
+			input:    "Intérnätionål",
+			expected: "Intérnätionål",
+		},
+		{
+			input:    "Intérnätionål®",
+			expected: "Intérnätionål-",
 		},
 	}
 
 	for i, tc := range cases {
 		t.Run(fmt.Sprintf("TestScmOrganisationSafeName-%d-%s", i, tc.input), func(t *testing.T) {
 			assert.Equal(t, tc.expected, safeName(tc.input))
+		})
+	}
+}
+
+func TestApplicationId(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "Name",
+			expected: "name",
+		},
+		{
+			input:    "Invalid—Characters",
+			expected: "invalid-characters",
+		},
+		{
+			input:    "Intérnätionål",
+			expected: "intérnätionål",
+		},
+		{
+			input:    "Intérnätionål®",
+			expected: "intérnätionål-",
+		},
+	}
+
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("TestApplicationId-%d-%s", i, tc.input), func(t *testing.T) {
+			app := Application{
+				Name: tc.input,
+			}
+			assert.Equal(t, tc.expected, app.SafeId())
 		})
 	}
 }

@@ -32,8 +32,9 @@ const (
 )
 
 var (
-	INVALID_BRANCH_NAME = regexp.MustCompile(`^\.|([;$!*&|\(\)\[\]<>#?~%'])|[\./]$`)
-	MULTIPLE_SPACES     = regexp.MustCompile(`\s(\s+)`)
+	INVALID_BRANCH_NAME  = regexp.MustCompile(`^\.|([;$!*&|\(\)\[\]<>#?~%'])|[\./]$`)
+	INVALID_APP_ORG_NAME = regexp.MustCompile(`([^\pL\pN._,\-\s])`)
+	MULTIPLE_SPACES      = regexp.MustCompile(`\s(\s+)`)
 )
 
 type ScmConfiguration struct {
@@ -53,13 +54,15 @@ func (a *Application) PrintTree(depth int) {
 }
 
 func (a *Application) SafeId() string {
-	return strings.ToLower(strings.Map(func(r rune) rune {
-		if strings.Contains(BANNED_CHARS_ID, string(r)) {
-			return '-'
-		} else {
-			return r
-		}
-	}, a.Name))
+	return strings.ToLower(INVALID_APP_ORG_NAME.ReplaceAllString(a.Name, "-"))
+
+	// 	strings.Map(func(r rune) rune {
+	// 	if strings.Contains(BANNED_CHARS_ID, string(r)) {
+	// 		return '-'
+	// 	} else {
+	// 		return r
+	// 	}
+	// }, a.Name))
 }
 
 func (a *Application) SafeName() string {
@@ -127,13 +130,10 @@ func (oc *OrgContents) PrintTree() {
 
 func safeName(in string) string {
 	return MULTIPLE_SPACES.ReplaceAllString(
-		strings.Map(func(r rune) rune {
-			if strings.Contains(BANNED_CHARS_NAME, string(r)) {
-				return '-'
-			} else {
-				return r
-			}
-		}, strings.ReplaceAll(strings.TrimSpace(in), "\t", "-")),
+		INVALID_APP_ORG_NAME.ReplaceAllString(
+			strings.ReplaceAll(strings.TrimSpace(in), "\t", "-"),
+			"-",
+		),
 		"-",
 	)
 }
