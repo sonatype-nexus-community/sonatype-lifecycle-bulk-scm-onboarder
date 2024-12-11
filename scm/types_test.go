@@ -196,6 +196,18 @@ func TestApplicationId(t *testing.T) {
 			input:    "Intérnätionål®",
 			expected: "intérnätionål-",
 		},
+		{
+			input:    " Leading Space",
+			expected: "leading-space",
+		},
+		{
+			input:    "Trailing Space ",
+			expected: "trailing-space",
+		},
+		{
+			input:    "Double  Space",
+			expected: "double-space",
+		},
 	}
 
 	for i, tc := range cases {

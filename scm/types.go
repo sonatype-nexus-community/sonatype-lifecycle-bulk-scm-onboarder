@@ -54,15 +54,7 @@ func (a *Application) PrintTree(depth int) {
 }
 
 func (a *Application) SafeId() string {
-	return strings.ToLower(INVALID_APP_ORG_NAME.ReplaceAllString(a.Name, "-"))
-
-	// 	strings.Map(func(r rune) rune {
-	// 	if strings.Contains(BANNED_CHARS_ID, string(r)) {
-	// 		return '-'
-	// 	} else {
-	// 		return r
-	// 	}
-	// }, a.Name))
+	return strings.ToLower(strings.ReplaceAll(safeName(a.Name), " ", "-"))
 }
 
 func (a *Application) SafeName() string {
